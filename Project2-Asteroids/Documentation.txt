@@ -1,0 +1,12 @@
+Jack Masson
+Asteroids
+
+A copy of the game asteroids. Large asteroids worth 20pts, medium 10pts, small 5pts.
+
+Use arrow keys to control and space to fire
+
+Above and Beyond:
+Asteroids break up in to 3 pieces and all asteroids are randomly generated using meshes. Code for triangulation take from http://wiki.unity3d.com/index.php?title=Triangulator
+
+Errors:
+When the player dies he is attempted to teleport back to the center but then immedilty teleports back to his current position where he died. When the player looses all there lives the game breaks.

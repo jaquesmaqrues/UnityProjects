@@ -1,0 +1,18 @@
+Jack Masson IGME 202 5
+Project 4 Humans vs Zombies
+
+Description:
+My project is an example of autonoums agents using 3d modeled knights and skeletions. Both try to avoid the towers. Knights evade skeletons and skeletons pursue knights. 
+GameObjects of the same type seperate from each other.
+
+Functionality
+C: Switch Camera view
+
+Above and Beyond:
+Added ablity to switch between multiple camera views by pressing C. 2 of the camera views are views from the perspective of skeletons. These camera views are smoothed out using
+the provided script. Also added terrain around the orginal platform.
+
+Sources:
+Skeleton: https://assetstore.unity.com/packages/3d/characters/humanoids/toon-rts-units-undead-demo-95640
+Knight: https://assetstore.unity.com/packages/3d/characters/toon-rts-units-demo-69687
+Tower: https://assetstore.unity.com/packages/3d/environments/fantasy/ruined-tower-7845

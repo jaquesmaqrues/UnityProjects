@@ -1,0 +1,12 @@
+Jack Masson IGME 202 5
+Project 5 Flocking and Pathfing
+
+Description:
+My Project has fish swimming and avoiding the rocks while staying in the water. There is also a turtle path finding between feathers.
+
+Functionality
+C: Switch Camera view
+Space: Turn on debug lines
+
+Sources:
+Models :https://assetstore.unity.com/packages/3d/environments/simplistic-low-poly-nature-93894

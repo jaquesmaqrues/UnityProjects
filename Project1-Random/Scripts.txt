@@ -1,0 +1,370 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+// TerrainGeneration class
+// Placed on a terrain game object
+// Generates a Perlin noise-based heightmap
+
+public class TerrainGeneration : MonoBehaviour
+{
+
+    private TerrainData myTerrainData;
+    public Vector3 worldSize;
+    public int resolution = 129;            // number of vertices along X and Z axes
+    float[,] heightArray;
+    float timeStep;
+
+
+    void Awake()
+    {
+        myTerrainData = gameObject.GetComponent<TerrainCollider>().terrainData;
+        worldSize = new Vector3(200, 50, 200);
+        myTerrainData.size = worldSize;
+        myTerrainData.heightmapResolution = resolution;
+        heightArray = new float[resolution, resolution];
+
+        // Fill the height array with values!
+        // Uncomment the Ramp and Perlin methods to test them out!
+        //Flat(1.0f);
+        //Ramp();
+        Perlin();
+
+        // Assign values from heightArray into the terrain object's heightmap
+        myTerrainData.SetHeights(0, 0, heightArray);
+
+    }
+
+
+    void Update()
+    {
+
+    }
+
+    /// <summary>
+    /// Flat()
+    /// Assigns heightArray identical values
+    /// </summary>
+    void Flat(float value)
+    {
+        // Fill heightArray with 1's
+        for (int i = 0; i < resolution; i++)
+        {
+            for (int j = 0; j < resolution; j++)
+            {
+                heightArray[i, j] = value;
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// Ramp()
+    /// Assigns heightsArray values that form a linear ramp
+    /// </summary>
+    void Ramp()
+    {
+        // Fill heightArray with linear values
+        for (int i = 0; i < resolution; i++)
+        {
+            for (int j = 0; j < resolution; j++)
+            {
+                heightArray[i, j] = (resolution - i) / (float)resolution;
+            }
+        }
+
+
+    }
+
+    /// <summary>
+    /// Perlin()
+    /// Assigns heightsArray values using Perlin noise
+    /// </summary>
+    void Perlin()
+    {
+
+        float timeStepValue = 0.03f;
+        //Starting value for Perlin
+        heightArray[0, 0] = 0.5f;
+
+        //Sets the first row and column values
+        for (int x = 1; x < resolution; x++)
+        {
+            timeStep = Random.Range(-timeStepValue, timeStepValue);
+            heightArray[x, 0] = heightArray[x - 1, 0] + timeStep;
+
+            timeStep = Random.Range(-timeStepValue, timeStepValue);
+            heightArray[0, x] = heightArray[0, x - 1] + timeStep;
+
+            if (heightArray[x, 0] > 1.0f)
+                heightArray[x, 0] = 1.0f;
+
+            if (heightArray[x, 0] < 0.0f)
+                heightArray[x, 0] = 0.0f;
+
+            if (heightArray[0, x] > 1.0f)
+                heightArray[0, x] = 1.0f;
+
+            if (heightArray[0, x] < 0.0f)
+                heightArray[0, x] = 0.0f;
+        }
+
+
+        // Fill heightArray with Perlin-based values
+
+        for (int i = 1; i < resolution; i++)
+        {
+            for (int j = 1; j < resolution; j++)
+            {
+                //Takes the two adjecent points and adds a time step and averages the two values
+                timeStep = Random.Range(-timeStepValue, timeStepValue);
+                heightArray[i, j] = (heightArray[i, j - 1] + heightArray[i - 1, j]) / 2.0f + timeStep;
+
+                if (heightArray[i, j] > 1.0f)
+                    heightArray[i, j] = 1.0f;
+
+                if (heightArray[i, j] < 0.0f)
+                    heightArray[i, j] = 0.0f;
+
+            }
+        }
+
+
+
+        //Normalize data
+        for (int j = 1; j < resolution - 1; j++)
+        {
+            for (int i = 1; i < resolution - 1; i++)
+            {
+
+                heightArray[i, j] = (heightArray[i - 1, j] + heightArray[i, j - 1] + heightArray[i - 1, j - 1] + heightArray[i + 1, j] + heightArray[i, j + 1] + heightArray[i + 1, j + 1] + heightArray[i - 1, j + 1] + heightArray[i + 1, j - 1] + heightArray[i, j]) / 9.0f;
+
+            }
+        }
+    }
+}
+
+
+
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class LeaderGeneration : MonoBehaviour
+{
+    public GameObject myPrefab;
+    public Terrain myTerrain;
+    List<GameObject> prefabs;
+
+    void Start()
+    {
+        prefabs = new List<GameObject>();
+        for (int x = 0; x<10; x++)
+        {
+            //Uses gaussian to create 10 leaders
+            prefabs.Add(Instantiate(myPrefab, new Vector3(100+Random.Range(-10,11),100, 100 + (x * 5)), Quaternion.identity));
+            prefabs[x].transform.localScale = new Vector3(Gaussian(5f, 2.5f), Gaussian(5f, 1.67f), Gaussian(5f, 2.5f));
+
+            //Places object on terrain
+            prefabs[x].transform.position =new Vector3(
+                prefabs[x].transform.position.x, 
+                myTerrain.SampleHeight
+                (
+                    new Vector3(prefabs[x].transform.position.x, 0, prefabs[x].transform.position.z)
+                ), 
+                prefabs[x].transform.position.z);
+
+        }
+        
+    }
+
+    //Gaussian algorithim from powerpoint slides
+    float Gaussian(float mean, float stdDev)
+    {
+        float val1 = Random.Range(0f, 1f);
+        float val2 = Random.Range(0f, 1f);
+        float gaussValue = Mathf.Sqrt(-2.0f * Mathf.Log(val1)) * Mathf.Sin(2.0f * Mathf.PI * val2);
+        return mean + stdDev * gaussValue;
+    }
+}
+
+
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class HordeGeneration : MonoBehaviour
+{
+    public GameObject myPrefab;
+    public Terrain myTerrain;
+    List<GameObject> prefabs;
+    void Start()
+    {
+        prefabs = new List<GameObject>();
+        for (int x = 0; x < 100; x++)
+        {
+            //Uses nonuniform random to create horde
+            prefabs.Add(Instantiate(myPrefab, new Vector3(100 + Random.Range(-20, 21), 100, 40 + (NonUniform() * 40) + Random.Range(0, 20)), Quaternion.identity));
+
+            //Places object on terrain
+            prefabs[x].transform.position = new Vector3(
+                prefabs[x].transform.position.x,
+                myTerrain.SampleHeight
+                (
+                    new Vector3(prefabs[x].transform.position.x, 0, prefabs[x].transform.position.z)
+                ),
+                prefabs[x].transform.position.z);
+
+        }
+    }
+
+    //Nonuniform random algorithm
+    float NonUniform()
+    {
+        float randChance = Random.Range(0.0f, 1.0f);
+        if (randChance<.5f)
+        {
+            return 1f;
+        }
+        else if (randChance < .75f)
+        {
+            return .5f;
+        }
+        else if (randChance < .9f)
+        {
+            return .25f;
+        }
+        else
+        {
+            return 0f;
+        }
+
+    }
+}
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class RandomGeneration : MonoBehaviour
+{
+    public GameObject myPrefab;
+    public Terrain myTerrain;
+    List<GameObject> prefabs;
+    void Start()
+    {
+        prefabs = new List<GameObject>();
+        for (int x = 0; x < 40; x++)
+        {
+            //Randomly places objects
+            prefabs.Add(Instantiate(myPrefab, new Vector3(Random.Range(0, 200), Random.Range(0, 200), Random.Range(0, 200)), Quaternion.identity));
+
+            //Places object on terrain
+            prefabs[x].transform.position = new Vector3(
+                prefabs[x].transform.position.x,
+                myTerrain.SampleHeight
+                (
+                    new Vector3(prefabs[x].transform.position.x, 0, prefabs[x].transform.position.z)
+                ),
+                prefabs[x].transform.position.z);
+
+        }
+    }
+}
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CameraScript : MonoBehaviour
+{
+    // Camera array that holds a reference to every camera in the scene
+    public Camera[] cameras;
+    // Current camera 
+    private int currentCameraIndex;
+    // Use this for initialization
+    void Start ()
+    {
+        currentCameraIndex = 0;
+        // Turn all cameras off, except the first default one
+        for (int i=1; i < cameras.Length; i++)
+        {
+            cameras[i].gameObject.SetActive(false);
+        }
+        // If any cameras were added to the controller, enable the first one
+        if (cameras.Length > 0)
+        { cameras [0].gameObject.SetActive (true);
+        }
+    }
+    // Update is called once per frame
+    void Update ()
+    {
+        // Press the 'C' key to cycle through cameras in the array
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            // Cycle to the next camera
+            currentCameraIndex ++;
+            // If cameraIndex is in bounds, set this camera active and last one inactive
+            if (currentCameraIndex < cameras.Length)
+            {
+                cameras[currentCameraIndex-1].gameObject.SetActive(false);cameras[currentCameraIndex].gameObject.SetActive(true);
+            }
+            // If last camera, cycle back to first camera
+            else {cameras[currentCameraIndex-1].gameObject.SetActive(false);
+                currentCameraIndex = 0;cameras[currentCameraIndex].gameObject.SetActive(true);
+            }
+        }
+    }
+    //Creates gui 
+    private void OnGUI()
+    {
+        GUI.Label(new Rect(new Vector2(10, 10),new Vector2(300, 100)), "Press 'c' to change camera views \n Camera "+currentCameraIndex);
+
+    }
+}
+
+
+
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Throw : MonoBehaviour
+{
+    public GameObject myPreFab;
+    public GameObject player;
+
+    // Update is called once per frame
+    void Update()
+    {
+        
+        if (Input.GetKeyDown("q"))
+        {
+            GameObject current;
+            //Code from https://answers.unity.com/questions/772331/spawn-object-in-front-of-player-and-the-way-he-is.html
+            Vector3 playerPos = player.transform.position;
+            Vector3 playerDirection = player.transform.forward;
+            Quaternion playerRotation = player.transform.rotation;
+            float spawnDistance = 1f;
+
+            Vector3 spawnPos = playerPos + playerDirection * spawnDistance;
+            
+            current = Instantiate(myPreFab, spawnPos, playerRotation);
+            //Adds force the player is looking
+            current.GetComponent<Rigidbody>().AddRelativeForce(Vector3.forward *1000);
+        }
+    }
+}
+
+
+
+
+
+

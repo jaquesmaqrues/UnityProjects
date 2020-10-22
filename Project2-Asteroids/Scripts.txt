@@ -1,0 +1,459 @@
+
+using UnityEngine;
+using System.Collections.Generic;
+
+
+//NOT MY CODE!!!!!
+//TAKEN FROM http://wiki.unity3d.com/index.php?title=Triangulator
+
+public class Triangulator
+{
+    private List<Vector2> m_points = new List<Vector2>();
+
+    public Triangulator(Vector2[] points)
+    {
+        m_points = new List<Vector2>(points);
+    }
+
+    public int[] Triangulate()
+    {
+        List<int> indices = new List<int>();
+
+        int n = m_points.Count;
+        if (n < 3)
+            return indices.ToArray();
+
+        int[] V = new int[n];
+        if (Area() > 0)
+        {
+            for (int v = 0; v < n; v++)
+                V[v] = v;
+        }
+        else
+        {
+            for (int v = 0; v < n; v++)
+                V[v] = (n - 1) - v;
+        }
+
+        int nv = n;
+        int count = 2 * nv;
+        for (int v = nv - 1; nv > 2;)
+        {
+            if ((count--) <= 0)
+                return indices.ToArray();
+
+            int u = v;
+            if (nv <= u)
+                u = 0;
+            v = u + 1;
+            if (nv <= v)
+                v = 0;
+            int w = v + 1;
+            if (nv <= w)
+                w = 0;
+
+            if (Snip(u, v, w, nv, V))
+            {
+                int a, b, c, s, t;
+                a = V[u];
+                b = V[v];
+                c = V[w];
+                indices.Add(a);
+                indices.Add(b);
+                indices.Add(c);
+                for (s = v, t = v + 1; t < nv; s++, t++)
+                    V[s] = V[t];
+                nv--;
+                count = 2 * nv;
+            }
+        }
+
+        indices.Reverse();
+        return indices.ToArray();
+    }
+
+    private float Area()
+    {
+        int n = m_points.Count;
+        float A = 0.0f;
+        for (int p = n - 1, q = 0; q < n; p = q++)
+        {
+            Vector2 pval = m_points[p];
+            Vector2 qval = m_points[q];
+            A += pval.x * qval.y - qval.x * pval.y;
+        }
+        return (A * 0.5f);
+    }
+
+    private bool Snip(int u, int v, int w, int n, int[] V)
+    {
+        int p;
+        Vector2 A = m_points[V[u]];
+        Vector2 B = m_points[V[v]];
+        Vector2 C = m_points[V[w]];
+        if (Mathf.Epsilon > (((B.x - A.x) * (C.y - A.y)) - ((B.y - A.y) * (C.x - A.x))))
+            return false;
+        for (p = 0; p < n; p++)
+        {
+            if ((p == u) || (p == v) || (p == w))
+                continue;
+            Vector2 P = m_points[V[p]];
+            if (InsideTriangle(A, B, C, P))
+                return false;
+        }
+        return true;
+    }
+
+    private bool InsideTriangle(Vector2 A, Vector2 B, Vector2 C, Vector2 P)
+    {
+        float ax, ay, bx, by, cx, cy, apx, apy, bpx, bpy, cpx, cpy;
+        float cCROSSap, bCROSScp, aCROSSbp;
+
+        ax = C.x - B.x; ay = C.y - B.y;
+        bx = A.x - C.x; by = A.y - C.y;
+        cx = B.x - A.x; cy = B.y - A.y;
+        apx = P.x - A.x; apy = P.y - A.y;
+        bpx = P.x - B.x; bpy = P.y - B.y;
+        cpx = P.x - C.x; cpy = P.y - C.y;
+
+        aCROSSbp = ax * bpy - ay * bpx;
+        cCROSSap = cx * apy - cy * apx;
+        bCROSScp = bx * cpy - by * cpx;
+
+        return ((aCROSSbp >= 0.0f) && (bCROSScp >= 0.0f) && (cCROSSap >= 0.0f));
+    }
+}
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class BulletManager : MonoBehaviour
+{
+    List<GameObject> bullets;
+    public GameObject bullet;
+    float timer;
+
+    public List<GameObject> GetBullets
+    {
+        get { return bullets; }
+    }
+
+    void Start()
+    {
+        bullets = new List<GameObject>();
+        timer = .2f;
+    }
+
+    void Update()
+    {
+        timer -= Time.deltaTime;
+        if (Input.GetKey(KeyCode.Space) && timer < 0)
+        {
+            bullets.Add(Instantiate(bullet));
+            timer = .2f;
+        }
+
+        for(int x = bullets.Count - 1; x > -1; x--)
+        {
+            if (bullets[x] == null)
+            {
+                bullets.RemoveAt(x);
+            }
+        }
+    }
+}
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Bullet : MonoBehaviour
+{
+    GameObject ship;
+    Vector3 velocity;
+    Vector3 direction;
+
+    void Start()
+    {
+        ship = GameObject.Find("Ship");
+        velocity = ship.transform.up * .2f;
+        transform.position = ship.transform.position;
+    }
+
+    void Update()
+    {
+
+        transform.position += velocity;
+        Destroy(gameObject, 2.0f);
+        
+    }
+}
+
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class AsteroidManager : MonoBehaviour
+{
+    List<Asteroid> asteroids;
+    public Asteroid asteroid;
+    float timer;
+    Asteroid current;
+
+    public List<Asteroid> GetAsteroids
+    {
+        get { return asteroids; }
+    }
+
+    void Start()
+    {
+        asteroids = new List<Asteroid>();
+        timer = .1f;
+    }
+
+    void Update()
+    {
+        timer -= Time.deltaTime;
+        if (timer < 0)
+        {
+            float r = 9f;
+            float angle = Random.Range(0, Mathf.PI * 2);
+            Vector2 pos2d = new Vector2(Mathf.Sin(angle) * r, Mathf.Cos(angle) * r);
+
+            current = Instantiate(asteroid, new Vector3(pos2d.x, pos2d.y, 0), Quaternion.identity);
+            current.Level = 1.1f;
+            asteroids.Add(current);
+            timer = .1f;
+        }
+
+        for (int x = asteroids.Count - 1; x > -1; x--)
+        {
+            if (asteroids[x] == null)
+            {
+                asteroids.RemoveAt(x);
+            }
+        }
+
+
+    }
+    public void AsteriodBreak(Vector3 position, float level)
+    { 
+        current = Instantiate(asteroid, position, Quaternion.identity);
+        current.Level = level - .3f;
+        asteroids.Add(current);
+        
+    }
+}
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CollisionManager : MonoBehaviour
+{
+    public GameObject spaceShip;//Spaceship gameObject
+    Vehicle spaceShipVehicle;
+    List<Asteroid> asteroids;//Array of planet objects
+    AsteroidManager asteroidManager;
+    Asteroid current;
+    BulletManager bulletManager;
+    List<GameObject> bullets;
+    CollisionDetection collisionDetection;//CollisionDetection script
+    bool switchCheck;//Checks if the 1 or 2 key has been pressed
+    int score;
+    public Texture image;
+    float timer = 0;
+
+
+    void Start()
+    {
+        spaceShip = FindObjectOfType<GameObject>();
+        collisionDetection = GetComponent<CollisionDetection>();
+        asteroidManager = GetComponent<AsteroidManager>();
+        bulletManager = GetComponent<BulletManager>();
+        spaceShipVehicle = spaceShip.GetComponent<Vehicle>();
+
+        timer = 1f;
+        score = 0;
+        spaceShipVehicle.Lives = 3;
+    }
+
+    void Update()
+    {
+        timer += Time.deltaTime;
+        asteroids = asteroidManager.GetAsteroids;
+        bullets = bulletManager.GetBullets;
+
+        for (int x = asteroids.Count - 1; x > -1; x--)
+        {
+            
+            if (asteroids[x] != null)
+            {
+
+                if (timer > 1f && collisionDetection.CircleCollision(spaceShip, asteroids[x]))//Calls CircleCollision
+                {
+                    timer = 0;
+                    spaceShipVehicle.transform.position = new Vector3(0, 0, -5);
+                    spaceShipVehicle.Lives--;
+                    if(spaceShipVehicle.Lives == 0)
+                    {
+                        Destroy(spaceShip);
+                    }
+
+                }
+
+                for (int y = bullets.Count - 1; y > -1; y--)
+                {
+
+                    if (bullets[y] != null)
+                    {
+
+                        if (collisionDetection.CircleCollision(bullets[y], asteroids[x]))//Calls CircleCollision
+                        {
+                            if (asteroids[x].Level > 1)
+                            {
+                                score += 20;
+                            }
+                            else if (asteroids[x].Level > .8)
+                            {
+                                score += 10;
+                            }
+                            else
+                            {
+                                score += 5;
+                            }
+                            if (asteroids[x].Level > .6f)
+                            {
+                                asteroidManager.AsteriodBreak(asteroids[x].transform.position, asteroids[x].Level);
+                                asteroidManager.AsteriodBreak(asteroids[x].transform.position, asteroids[x].Level);
+                            }
+
+                            Destroy(asteroids[x].gameObject);
+                            asteroids.RemoveAt(x);
+                            Destroy(bullets[y]);
+                            bullets.RemoveAt(y);
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        bullets.RemoveAt(y);
+                    }
+
+                }
+
+
+            }
+
+            else
+            {
+                asteroids.RemoveAt(x);
+            }
+        }
+
+    }
+
+    private void OnGUI()
+    {
+        GUIStyle style = new GUIStyle();
+        style.fontSize = 30;
+        style.normal.textColor = Color.white;
+        GUI.Label(new Rect(10, 10, 100, 20), score.ToString(), style);
+        for (int x = 0; x < spaceShipVehicle.Lives; x++)
+        {
+            GUI.Label(new Rect(10 + (x * 30), 40, 20, 100), image);
+        }
+
+    }
+}
+
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CollisionDetection : MonoBehaviour
+{
+    MeshRenderer meshRenderer;//Spritee render for planets used to get bounds
+    SpriteRenderer spriteRenderer;//Sprite render of ship
+
+    public bool CircleCollision(GameObject objectOne, Asteroid objectTwo)
+    {
+        spriteRenderer = objectOne.GetComponent<SpriteRenderer>();
+        meshRenderer = objectTwo.GetComponent<MeshRenderer>();
+        Debug.DrawLine(meshRenderer.bounds.center, meshRenderer.bounds.center + meshRenderer.bounds.extents, Color.green);
+        Debug.DrawLine(spriteRenderer.bounds.center, meshRenderer.bounds.center, Color.magenta);
+        //Finds the average of the x and y distance of both the planet and spaceship and uses that as the radi then compares the squared sum of the radi to the squared magnitude of the distance between the objects
+        if (Mathf.Pow((spriteRenderer.bounds.extents.x + spriteRenderer.bounds.extents.y)/2 + (meshRenderer.bounds.extents.x + meshRenderer.bounds.extents.y)/2, 2) > (spriteRenderer.bounds.center - new Vector3(meshRenderer.bounds.center.x, meshRenderer.bounds.center.y, 0)).sqrMagnitude)
+        {            
+            return true;
+        }
+        return false;
+    }
+
+
+}
+
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CollisionDetection : MonoBehaviour
+{
+    MeshRenderer meshRenderer;//Spritee render for planets used to get bounds
+    SpriteRenderer spriteRenderer;//Sprite render of ship
+
+    public bool CircleCollision(GameObject objectOne, Asteroid objectTwo)
+    {
+        spriteRenderer = objectOne.GetComponent<SpriteRenderer>();
+        meshRenderer = objectTwo.GetComponent<MeshRenderer>();
+        Debug.DrawLine(meshRenderer.bounds.center, meshRenderer.bounds.center + meshRenderer.bounds.extents, Color.green);
+        Debug.DrawLine(spriteRenderer.bounds.center, meshRenderer.bounds.center, Color.magenta);
+        //Finds the average of the x and y distance of both the planet and spaceship and uses that as the radi then compares the squared sum of the radi to the squared magnitude of the distance between the objects
+        if (Mathf.Pow((spriteRenderer.bounds.extents.x + spriteRenderer.bounds.extents.y)/2 + (meshRenderer.bounds.extents.x + meshRenderer.bounds.extents.y)/2, 2) > (spriteRenderer.bounds.center - new Vector3(meshRenderer.bounds.center.x, meshRenderer.bounds.center.y, 0)).sqrMagnitude)
+        {            
+            return true;
+        }
+        return false;
+    }
+
+
+}
+
+
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CollisionDetection : MonoBehaviour
+{
+    MeshRenderer meshRenderer;//Spritee render for planets used to get bounds
+    SpriteRenderer spriteRenderer;//Sprite render of ship
+
+    public bool CircleCollision(GameObject objectOne, Asteroid objectTwo)
+    {
+        spriteRenderer = objectOne.GetComponent<SpriteRenderer>();
+        meshRenderer = objectTwo.GetComponent<MeshRenderer>();
+        Debug.DrawLine(meshRenderer.bounds.center, meshRenderer.bounds.center + meshRenderer.bounds.extents, Color.green);
+        Debug.DrawLine(spriteRenderer.bounds.center, meshRenderer.bounds.center, Color.magenta);
+        //Finds the average of the x and y distance of both the planet and spaceship and uses that as the radi then compares the squared sum of the radi to the squared magnitude of the distance between the objects
+        if (Mathf.Pow((spriteRenderer.bounds.extents.x + spriteRenderer.bounds.extents.y)/2 + (meshRenderer.bounds.extents.x + meshRenderer.bounds.extents.y)/2, 2) > (spriteRenderer.bounds.center - new Vector3(meshRenderer.bounds.center.x, meshRenderer.bounds.center.y, 0)).sqrMagnitude)
+        {            
+            return true;
+        }
+        return false;
+    }
+
+
+}
+

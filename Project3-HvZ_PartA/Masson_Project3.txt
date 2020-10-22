@@ -1,0 +1,16 @@
+Jack Masson Section 5
+Humans VS Zombies Project 3
+
+Description:
+This is an example of seeking and fleeing as the human yellow characters flee from the green zombies and seek the purple sphere. The zombies also seek the humans.
+
+Functionality:
+N/A
+
+Above and Beyond:
+N/A
+
+Known Issues:
+When new zombies are spawned in they sometimes stop tracking a human
+
+

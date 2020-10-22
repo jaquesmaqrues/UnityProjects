@@ -1,0 +1,21 @@
+I AM USING MY GRACE PERIOD
+
+Jack Masson IGME 202 5
+
+Description:
+Used multiple forms of randomness to generate terrain. The project is an alien terrain where the player can destroy the incoming invasion.
+
+User Responsibilty:
+User will explore terrain and destroy aliens
+C - Changes camera view
+Q - Throws snowballs to destroy aliens
+
+Above and Beyond:
+Custom theme and added system to throw snowballs in the direction that the player is facing that destroy the aliens.
+
+Sources: 
+FPS controller: https://assetstore.unity.com/packages/essentials/asset-packs/standard-assets-32351
+Leading Alien: https://assetstore.unity.com/packages/3d/characters/creatures/alien-character-20838
+Horde Alien: https://assetstore.unity.com/packages/3d/characters/creatures/alien-insect-character-16469
+Box Model: https://assetstore.unity.com/packages/3d/characters/humanoids/grunk-alien-15088
+Ground Texture: https://images.app.goo.gl/VnP2rRzRpxzHstnb8
